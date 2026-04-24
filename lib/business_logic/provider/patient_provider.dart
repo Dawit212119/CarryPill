@@ -15,6 +15,8 @@ class PatientProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Bulk-updates the in-memory patient from profile form fields and notifies
+  // listeners once; null geoPoint/profileImageUrl leave existing values intact.
   void updatePatientInfo({
     required String name,
     required String patientId,
