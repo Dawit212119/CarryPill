@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 class OrderStatusUtils {
   OrderStatusUtils._();
 
+  // Maps internal order states to the short, patient-facing labels shown in
+  // the tracking UI. Keep these in sync with the timeline flow.
   static String label(StatusOrder status) {
     switch (status) {
       case StatusOrder.noOrder:
