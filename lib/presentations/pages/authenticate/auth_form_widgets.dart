@@ -125,7 +125,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
                 color: kcGreyLabel.withValues(alpha: 0.85),
               ),
               filled: true,
-              fillColor: const Color(0xFFF7F9FC),
+              fillColor: kcBgDark,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16.w,
                 vertical: 16.h,
@@ -151,7 +151,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
-                borderSide: const BorderSide(color: Color(0xFFE8ECF4)),
+                borderSide: BorderSide(color: kcBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
