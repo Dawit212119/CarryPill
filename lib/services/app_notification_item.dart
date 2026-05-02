@@ -19,6 +19,8 @@ class AppNotificationItem {
     required this.status,
   });
 
+  // Derives notification items from orders; orders without a documentID are
+  // skipped since they can't be deep-linked back to a detail screen.
   static List<AppNotificationItem> fromOrders(List<OrderService> orders) {
     final items = <AppNotificationItem>[];
     for (final order in orders) {
