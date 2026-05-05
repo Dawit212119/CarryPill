@@ -1,393 +1,210 @@
 import 'dart:io';
-
 import 'package:carrypill/business_logic/provider/patient_provider.dart';
 import 'package:carrypill/constants/constant_color.dart';
-import 'package:carrypill/constants/constant_widget.dart';
 import 'package:carrypill/data/models/patient.dart';
 import 'package:carrypill/data/models/patient_uid.dart';
 import 'package:carrypill/data/repositories/supabase_repo/database_repo.dart';
 import 'package:carrypill/data/repositories/supabase_repo/storage_repo.dart';
-import 'package:carrypill/data/repositories/map_repo/location_repo.dart';
 import 'package:carrypill/data/models/geo_point.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:image/image.dart' as img;
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileInfo extends StatefulWidget {
   Map<String, dynamic>? arg = {};
   ProfileInfo({Key? key, required this.arg}) : super(key: key);
-
   @override
   _ProfileInfoState createState() => _ProfileInfoState();
 }
 
 class _ProfileInfoState extends State<ProfileInfo> {
-  late TextEditingController namecon; // = TextEditingController();
-  late TextEditingController icNumcon; // = TextEditingController();
-  late TextEditingController phoneNumcon; // = TextEditingController();
-  late TextEditingController patientIdcon; // = TextEditingController();
-  late TextEditingController addresscon; // = TextEditingController();
-
-  FocusNode nodename = FocusNode();
-  FocusNode nodeicNum = FocusNode();
-  FocusNode nodephoneNum = FocusNode();
-  FocusNode nodepatientId = FocusNode();
-  FocusNode nodeaddress = FocusNode();
-
-  List<bool> enabled = List.filled(5, false);
+  late TextEditingController namecon, icNumcon, phoneNumcon, patientIdcon, addresscon;
   String? filePath, fileName;
   File? file;
   bool loading = false;
+  double? lat, lng;
 
   @override
   void initState() {
-    // TODO: implement initState
-    // print('init profile info');
-    Patient? patient = widget.arg!['patient'];
-    if (patient != null) {
-      // print(patient.name);
-      namecon = TextEditingController(text: patient.name);
-      icNumcon = TextEditingController(text: patient.icNum);
-      phoneNumcon = TextEditingController(text: patient.phoneNum);
-      patientIdcon = patient.patientId != null
-          ? TextEditingController(text: patient.patientId)
-          : TextEditingController();
-      addresscon = patient.address != null
-          ? TextEditingController(text: patient.address)
-          : TextEditingController();
-    }
+    final p = widget.arg!['patient'] as Patient?;
+    namecon = TextEditingController(text: p?.name ?? '');
+    icNumcon = TextEditingController(text: p?.icNum ?? '');
+    phoneNumcon = TextEditingController(text: p?.phoneNum ?? '');
+    patientIdcon = TextEditingController(text: p?.patientId ?? '');
+    addresscon = TextEditingController(text: p?.address ?? '');
+    lat = p?.geoPoint?.latitude;
+    lng = p?.geoPoint?.longitude;
     super.initState();
+  }
+
+  void _msg(String t) { setState(() => loading = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t))); }
+
+  Future<void> _openMap() async {
+    final la = lat ?? 9.0192, lo = lng ?? 38.7525;
+    final uri = Platform.isIOS ? Uri.parse('https://maps.apple.com/?q=$la,$lo') : Uri.parse('geo:$la,$lo?q=$la,$lo');
+    final fb = Uri.parse('https://www.google.com/maps/search/?api=1&query=$la,$lo');
+    if (await canLaunchUrl(uri)) { await launchUrl(uri); }
+    else if (await canLaunchUrl(fb)) { await launchUrl(fb, mode: LaunchMode.externalApplication); }
+  }
+
+  Future<void> _useGps() async {
+    setState(() => loading = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) { _msg('Enable location'); return; }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) { perm = await Geolocator.requestPermission(); }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) { _msg('Permission denied'); return; }
+      final pos = await Geolocator.getCurrentPosition();
+      setState(() { lat = pos.latitude; lng = pos.longitude; loading = false; });
+      _msg('Location set');
+    } catch (_) { _msg('GPS failed'); }
+  }
+
+  Future<void> _save() async {
+    final acc = Provider.of<PatientUid>(context, listen: false);
+    final p = widget.arg!['patient'] as Patient?;
+    setState(() => loading = true);
+    try {
+      final geo = (lat != null && lng != null) ? GeoPoint(lat!, lng!) : GeoPoint(9.0192, 38.7525);
+      String? url = p?.profileImageUrl;
+      if (filePath != null) url = await StorageRepo(uid: acc.uid).uploadPatientProfileImage(filePath!, fileName!);
+      Provider.of<PatientProvider>(context, listen: false).updatePatientInfo(
+        name: namecon.text, icNum: icNumcon.text, phoneNum: phoneNumcon.text,
+        address: addresscon.text, patientId: patientIdcon.text, geoPoint: geo, profileImageUrl: url);
+      await DatabaseRepo(uid: acc.uid).updatePatientInfo(
+        name: namecon.text, icNum: icNumcon.text, phoneNum: phoneNumcon.text,
+        address: addresscon.text, patientId: patientIdcon.text, geoPoint: geo, profileImageUrl: url);
+      _msg('Saved');
+    } catch (e) { _msg('Failed: $e'); }
+    setState(() => loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    PatientUid useraccount = Provider.of<PatientUid>(context);
-    // var patientprovider = Provider.of<PatientProvider>(context);
-    Patient? patient = widget.arg!['patient'];
-    return Stack(
-      children: [
-        Scaffold(
-          appBar: AppBar(
-            title: const Text('Profile Info'),
-          ),
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Column(
-                children: [
-                  gaphr(),
-                  SizedBox(
-                    height: 120,
-                    width: 120,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.grey,
-                                  offset: Offset(0.0, 1.0), //(x,y)
-                                  blurRadius: 2.0,
-                                ),
-                              ],
-                              image: DecorationImage(
-                                  image: patient?.profileImageUrl != null &&
-                                          file == null
-                                      ? NetworkImage(patient!.profileImageUrl!)
-                                      : file != null
-                                          ? FileImage(file!)
-                                          : const AssetImage(
-                                                  'assets/images/profile.png')
-                                              as ImageProvider)),
-                          // child: file != null
-                          //     ? Image.file(file!)
-                          //     : Image.asset(
-                          //         'assets/images/profile.png',
-                          //         height: 115,
-                          //       ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Material(
-                            clipBehavior: Clip.hardEdge,
-                            color: Colors.transparent,
-                            elevation: 0,
-                            child: InkWell(
-                              onTap: () async {
-                                setState(() {
-                                  loading = true;
-                                });
-                                final results =
-                                    await FilePicker.pickFiles(
-                                  allowMultiple: false,
-                                  type: FileType.image,
-                                  // type: FileType.custom,
-                                  // allowedExtensions: ['jpg', 'png', 'jpeg'],
-                                  // allowCompression: true,
-                                );
-
-                                if (results != null) {
-                                  // final path = results.path;
-                                  final path = results.files.single.path!;
-                                  File pickedfile = File(path);
-                                  Image(image: FileImage(pickedfile))
-                                      .image
-                                      .resolve(const ImageConfiguration())
-                                      .addListener(
-                                    ImageStreamListener(
-                                      (ImageInfo info, bool syncCall) {
-                                        int width = info.image.width;
-                                        int height = info.image.height;
-                                        print(width);
-                                        print(height);
-                                      },
-                                    ),
-                                  );
-                                  final img.Image? image = img.decodeImage(
-                                      await File(path).readAsBytes());
-                                  final img.Image orientedImage =
-                                      img.bakeOrientation(image!);
-                                  File newfile = await File(path).writeAsBytes(
-                                      img.encodeJpg(orientedImage));
-
-                                  setState(() {
-                                    file = newfile;
-                                    filePath = path;
-                                    //fileName = results.name;
-                                    fileName = results.files.single.name;
-                                    loading = false;
-                                  });
-                                } else {
-                                  setState(() {
-                                    loading = false;
-                                  });
-                                }
-                              },
-                              borderRadius: BorderRadius.circular(50),
-                              splashColor:
-                                  Colors.grey.shade300.withOpacity(0.8),
-                              highlightColor:
-                                  Colors.grey.shade800.withOpacity(0.2),
-                              child: Ink(
-                                height: 35,
-                                width: 35,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    width: 1,
-                                    color: kcWhite,
-                                  ),
-                                  shape: BoxShape.circle,
-                                  color: Colors.grey,
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.add_a_photo_rounded,
-                                    color: kcWhite,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                  gaphr(),
-                  cardTextFieldDesign(namecon, 'Full Name', nodename,
-                      'Insert full name as per IC', 0),
-                  gaphr(),
-                  cardTextFieldDesign(patientIdcon, 'Patient ID', nodepatientId,
-                      'Insert patient ID', 1),
-                  gaphr(),
-                  cardTextFieldDesign(icNumcon, 'IC Number', nodeicNum,
-                      'Insert IC number Ex: 123456789012', 2),
-                  gaphr(),
-                  cardTextFieldDesign(phoneNumcon, 'Phone Number', nodephoneNum,
-                      'Insert phone number', 3),
-                  gaphr(),
-                  cardTextFieldDesign(addresscon, 'Address', nodeaddress,
-                      'Insert phone number', 4),
-                  gaphr(h: 30),
-                  MaterialButton(
-                    onPressed: () async {
-                      GeoPoint geo;
-                      setState(() {
-                        loading = true;
-                      });
-                      try {
-                        if (addresscon.text.isEmpty) {
-                          Position pos =
-                              await LocationRepo().getCurrentLocation();
-                          geo = GeoPoint(pos.latitude, pos.longitude);
-                        } else {
-                          var addresses =
-                              await locationFromAddress(addresscon.text);
-                          // print(addresses.first);
-                          var address = addresses.first;
-                          geo = GeoPoint(address.latitude, address.longitude);
-                        }
-
-                        if (filePath != null) {
-                          final String? url = await StorageRepo(
-                                  uid: useraccount.uid)
-                              .uploadPatientProfileImage(filePath!, fileName!);
-
-                          // print(url);
-
-                          Provider.of<PatientProvider>(context, listen: false)
-                              .updatePatientInfo(
-                            name: namecon.text,
-                            icNum: icNumcon.text,
-                            phoneNum: phoneNumcon.text,
-                            address: addresscon.text,
-                            patientId: patientIdcon.text,
-                            geoPoint: geo,
-                            profileImageUrl: url,
-                          );
-                          await DatabaseRepo(uid: useraccount.uid)
-                              .updatePatientInfo(
-                            name: namecon.text,
-                            icNum: icNumcon.text,
-                            phoneNum: phoneNumcon.text,
-                            address: addresscon.text,
-                            patientId: patientIdcon.text,
-                            geoPoint: geo,
-                            profileImageUrl: url,
-                          );
-                          // print('if');
-                        } else {
-                          Provider.of<PatientProvider>(context, listen: false)
-                              .updatePatientInfo(
-                            name: namecon.text,
-                            icNum: icNumcon.text,
-                            phoneNum: phoneNumcon.text,
-                            address: addresscon.text,
-                            patientId: patientIdcon.text,
-                            geoPoint: geo,
-                            profileImageUrl: patient!.profileImageUrl,
-                          );
-                          await DatabaseRepo(uid: useraccount.uid)
-                              .updatePatientInfo(
-                            name: namecon.text,
-                            icNum: icNumcon.text,
-                            phoneNum: phoneNumcon.text,
-                            address: addresscon.text,
-                            patientId: patientIdcon.text,
-                            geoPoint: geo,
-                            profileImageUrl: patient.profileImageUrl,
-                          );
-                          // print('else');
-                        }
-                        //GeoPoint geoPoint = GeoPoint(pos.latitude, pos.longitude);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Update Saved'),
-                          ),
-                        );
-                      } on Exception catch (e) {
-                        setState(() {
-                          loading = false;
-                        });
-                        print(e);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Update Failed due to error ${e.toString()}'),
-                          ),
-                        );
-                      }
-                      setState(() {
-                        loading = false;
-                      });
-                    },
-                    shape: cornerR(r: 8),
-                    height: 44.h,
-                    minWidth: double.infinity,
-                    color: kcPrimary,
-                    child: textBtn15('Update Profile Info'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        loading
-            ? Container(
-                width: double.infinity,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400.withOpacity(0.7),
-                ),
-                child: loadingPillriveR(100),
-              )
-            : const SizedBox(),
-      ],
-    );
-  }
-
-  Widget cardTextFieldDesign(TextEditingController controller, String label,
-      FocusNode node, String hintText, int index) {
-    return Card(
-      shape: cornerR(),
-      color: Colors.white,
-      elevation: 1,
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 10.w,
-          vertical: 5.h,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                focusNode: node,
-                style: enabled[index] ? kwstyleb16 : kwstyleHint16,
-                controller: controller,
-                enabled: enabled[index],
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-                  floatingLabelStyle: kwtextStyleRD(
-                    c: kcLabelColor,
-                    fs: 16,
-                    fw: FontWeight.w500,
-                  ),
-                  floatingLabelBehavior: FloatingLabelBehavior.always,
-                  labelText: label,
-                  labelStyle: kwtextStyleRD(
-                    c: kcLabelColor,
-                    fs: 16,
-                    fw: FontWeight.w500,
-                  ),
-                  // hintText: hintText,
-                  // hintStyle: kwstyleHint16,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  enabled[index] = !enabled[index];
-                });
-              },
-              splashRadius: 24,
-              iconSize: 24,
-              icon: Icon(
-                enabled[index] ? Icons.check_rounded : Icons.edit_rounded,
-                size: 24,
-                color: kcPrimary,
-              ),
-            )
+    final p = widget.arg!['patient'] as Patient?;
+    return Stack(children: [
+      Scaffold(
+        backgroundColor: kcBgDark,
+        appBar: AppBar(backgroundColor: kcBgDark, elevation: 0, scrolledUnderElevation: 0, foregroundColor: kctextDark,
+          title: Text('Edit Profile', style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700)),
+          actions: [
+            TextButton(onPressed: _save, child: Text('Save', style: TextStyle(color: kcAccent, fontWeight: FontWeight.w700, fontSize: 14.sp))),
           ],
         ),
+        body: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(height: 8.h),
+            // Avatar
+            Center(child: Stack(children: [
+              Container(width: 90.w, height: 90.w, decoration: BoxDecoration(
+                shape: BoxShape.circle, border: Border.all(color: kcAccent, width: 2),
+                image: DecorationImage(fit: BoxFit.cover,
+                  image: (p?.profileImageUrl != null && file == null) ? NetworkImage(p!.profileImageUrl!)
+                    : file != null ? FileImage(file!) : const AssetImage('assets/images/profile.png') as ImageProvider),
+              )),
+              Positioned(bottom: 0, right: 0, child: GestureDetector(
+                onTap: () async {
+                  setState(() => loading = true);
+                  final r = await FilePicker.pickFiles(allowMultiple: false, type: FileType.image);
+                  if (r != null) {
+                    final path = r.files.single.path!;
+                    final im = img.decodeImage(await File(path).readAsBytes());
+                    final o = img.bakeOrientation(im!);
+                    final nf = await File(path).writeAsBytes(img.encodeJpg(o));
+                    setState(() { file = nf; filePath = path; fileName = r.files.single.name; loading = false; });
+                  } else { setState(() => loading = false); }
+                },
+                child: Container(width: 30.w, height: 30.w, decoration: BoxDecoration(color: kcAccent, shape: BoxShape.circle, border: Border.all(color: kcBgDark, width: 2)),
+                  child: Icon(Icons.camera_alt_rounded, color: kcBgDark, size: 14.sp)),
+              )),
+            ])),
+
+            SizedBox(height: 28.h),
+            _Lbl('Personal'),
+            SizedBox(height: 12.h),
+            _F(con: namecon, label: 'Full Name', icon: Icons.person_outline),
+            _F(con: patientIdcon, label: 'Patient ID', icon: Icons.badge_outlined),
+            _F(con: icNumcon, label: 'IC Number', icon: Icons.credit_card_outlined),
+            _F(con: phoneNumcon, label: 'Phone', icon: Icons.phone_outlined, type: TextInputType.phone),
+
+            SizedBox(height: 20.h),
+            _Lbl('Address & Location'),
+            SizedBox(height: 12.h),
+            _F(con: addresscon, label: 'Home address', icon: Icons.home_outlined, lines: 2),
+            SizedBox(height: 10.h),
+
+            Container(
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(color: kcCardDark, borderRadius: BorderRadius.circular(14.r)),
+              child: Column(children: [
+                if (lat != null && lng != null) Padding(padding: EdgeInsets.only(bottom: 12.h), child: Row(children: [
+                  Icon(Icons.location_on_rounded, color: kcAccent, size: 17.sp), SizedBox(width: 8.w),
+                  Text('${lat!.toStringAsFixed(4)}, ${lng!.toStringAsFixed(4)}', style: TextStyle(fontSize: 13.sp, color: kctextDark)),
+                ])),
+                Row(children: [
+                  Expanded(child: _Btn(icon: Icons.map_outlined, label: 'Map', color: kcPurple, onTap: _openMap)),
+                  SizedBox(width: 10.w),
+                  Expanded(child: _Btn(icon: Icons.my_location_rounded, label: 'GPS', color: kcAccent, onTap: _useGps)),
+                ]),
+              ]),
+            ),
+            SizedBox(height: 32.h),
+          ]),
+        ),
       ),
-    );
+      if (loading) Container(color: Colors.black45, child: const Center(child: CircularProgressIndicator(color: kcAccent, strokeWidth: 3))),
+    ]);
+  }
+}
+
+class _Lbl extends StatelessWidget {
+  final String t;
+  const _Lbl(this.t);
+  @override Widget build(BuildContext context) => Text(t, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: kctextDark));
+}
+
+class _F extends StatelessWidget {
+  final TextEditingController con;
+  final String label;
+  final IconData icon;
+  final TextInputType? type;
+  final int lines;
+  const _F({required this.con, required this.label, required this.icon, this.type, this.lines = 1});
+  @override Widget build(BuildContext context) {
+    return Padding(padding: EdgeInsets.only(bottom: 10.h), child: TextField(
+      controller: con, keyboardType: type, maxLines: lines,
+      style: TextStyle(fontSize: 14.sp, color: kctextDark, fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: kcGreyLabel, size: 20.sp),
+        labelText: label, labelStyle: TextStyle(color: kcGreyLabel, fontSize: 13.sp),
+        floatingLabelStyle: TextStyle(color: kcAccent, fontWeight: FontWeight.w600, fontSize: 13.sp),
+        filled: true, fillColor: kcCardDark,
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r), borderSide: BorderSide(color: kcBorder)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r), borderSide: BorderSide(color: kcBorder)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14.r), borderSide: BorderSide(color: kcAccent, width: 1.5)),
+      ),
+    ));
+  }
+}
+
+class _Btn extends StatelessWidget {
+  final IconData icon; final String label; final Color color; final VoidCallback onTap;
+  const _Btn({required this.icon, required this.label, required this.color, required this.onTap});
+  @override Widget build(BuildContext context) {
+    return GestureDetector(onTap: onTap, child: Container(
+      padding: EdgeInsets.symmetric(vertical: 11.h),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10.r)),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, color: color, size: 17.sp), SizedBox(width: 6.w),
+        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13.sp)),
+      ]),
+    ));
   }
 }

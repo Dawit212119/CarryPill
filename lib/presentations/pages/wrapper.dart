@@ -1,3 +1,4 @@
+import 'package:carrypill/core/services/notification_service.dart';
 import 'package:carrypill/core/widgets/app_loading_indicator.dart';
 import 'package:carrypill/data/models/patient.dart';
 import 'package:carrypill/data/models/patient_uid.dart';
@@ -32,18 +33,24 @@ class _PatientLoader extends StatefulWidget {
 }
 
 class _PatientLoaderState extends State<_PatientLoader> {
-  Patient? patient;
-  bool loading = true;
+  bool _ensured = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPatient();
+    NotificationService().startListening(widget.uid);
+    _ensureProfile();
   }
 
-  Future<void> _loadPatient() async {
-    var profile = await DatabaseRepo(uid: widget.uid).futurePatient;
-    if (profile == null) {
+  @override
+  void dispose() {
+    NotificationService().stopListening();
+    super.dispose();
+  }
+
+  Future<void> _ensureProfile() async {
+    final existing = await DatabaseRepo(uid: widget.uid).futurePatient;
+    if (existing == null) {
       await DatabaseRepo(uid: widget.uid).updateAllPatientData(
         Patient(
           name: 'Patient',
@@ -52,23 +59,31 @@ class _PatientLoaderState extends State<_PatientLoader> {
           clinicList: AuthRepo.defaultClinicList(),
         ),
       );
-      profile = await DatabaseRepo(uid: widget.uid).futurePatient;
     }
-    if (mounted) {
-      setState(() {
-        patient = profile;
-        loading = false;
-      });
-    }
+    if (mounted) setState(() => _ensured = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading || patient == null) {
-      return Scaffold(
-        body: const AppLoadingIndicator(size: 56),
-      );
+    if (!_ensured) {
+      return const Scaffold(body: AppLoadingIndicator(size: 56));
     }
-    return HomePage(patient: patient!);
+
+    return StreamBuilder<Patient?>(
+      stream: DatabaseRepo(uid: widget.uid).streamPatient,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
+          return const Scaffold(body: AppLoadingIndicator(size: 56));
+        }
+
+        final patient = snapshot.data;
+        if (patient == null) {
+          return const Scaffold(body: AppLoadingIndicator(size: 56));
+        }
+
+        return HomePage(patient: patient);
+      },
+    );
   }
 }
