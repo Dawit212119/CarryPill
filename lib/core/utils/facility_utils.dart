@@ -16,6 +16,8 @@ class FacilityUtils {
     List<Facility> facilities,
     GeoPoint? from,
   ) {
+    // Without an origin point we can't rank by proximity, so return the
+    // facilities unsorted with a null distance rather than guessing.
     if (from == null) {
       return facilities
           .map((f) => FacilityWithDistance(facility: f))
