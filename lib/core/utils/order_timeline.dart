@@ -18,6 +18,8 @@ class OrderTimelineStep {
 class OrderTimeline {
   OrderTimeline._();
 
+  // Ordered happy-path of an order. `orderCancelled` is intentionally absent:
+  // a cancelled order leaves this flow and is rendered separately.
   static const _flow = [
     StatusOrder.findingDriver,
     StatusOrder.driverFound,
