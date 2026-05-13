@@ -15,6 +15,8 @@ class DatabaseProvider {
 
   SupabaseClient get _client => Supabase.instance.client;
 
+  // Prefer an explicitly passed uid, otherwise fall back to the signed-in
+  // user so background calls still resolve the right row.
   String? get _effectiveUid => uid ?? _client.auth.currentUser?.id;
 
   DateTime? _parseDate(dynamic value) {
