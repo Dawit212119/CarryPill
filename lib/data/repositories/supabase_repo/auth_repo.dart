@@ -23,6 +23,8 @@ class AuthRepo {
     return PatientUid(uid: user.id);
   }
 
+  // Emits the current patient on every auth state change (login, logout,
+  // token refresh); yields null when there is no active session.
   Stream<PatientUid?> get patient {
     return _client.auth.onAuthStateChange.map((event) {
       return _patientFromUser(event.session?.user);
