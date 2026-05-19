@@ -58,10 +58,7 @@ class _RequestDeliveryState extends State<RequestDelivery>
             changePage(currentIndex);
             return false;
           } else if (currentIndex == 2) {
-            // setState(() {
-            //   currentIndex = 1;
-            // });
-            // changePage(currentIndex);
+            Navigator.of(context).pop();
             return false;
           } else {
             return true;
@@ -81,7 +78,7 @@ class _RequestDeliveryState extends State<RequestDelivery>
                   handle:
                       NestedScrollView.sliverOverlapAbsorberHandleFor(context),
                   sliver: SliverAppBar(
-                    automaticallyImplyLeading: currentIndex != 2,
+                    automaticallyImplyLeading: true,
                     //leading: ,
                     //forceElevated: innerBoxIsScrolled,
                     title: Text(
