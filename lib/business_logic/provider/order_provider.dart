@@ -13,6 +13,8 @@ class OrderProvider with ChangeNotifier {
     required this.orderService,
   });
 
+  // Every mutator notifies listeners so dependent widgets rebuild; callers
+  // should not mutate `orderService` fields directly outside these methods.
   void updatePatient(Patient patientt) {
     patient = patientt;
     notifyListeners();
