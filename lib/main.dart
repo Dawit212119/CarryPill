@@ -6,6 +6,7 @@ import 'package:carrypill/data/models/patient_uid.dart';
 import 'package:carrypill/constants/supabase_config.dart';
 import 'package:carrypill/data/repositories/supabase_repo/auth_repo.dart';
 import 'package:carrypill/data/repositories/map_repo/location_repo.dart';
+import 'package:carrypill/core/services/notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,7 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  await NotificationService().initialize();
   Position? position = await LocationRepo().initPosition();
   // print(position);
   runApp(MultiProvider(providers: [
