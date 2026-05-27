@@ -28,6 +28,8 @@ class LocationProvider {
   //   return await geolocatorPlatform.requestPermission();
   // }
 
+  // Haversine distance in km; `p` is the deg->rad factor and 12742 is the
+  // Earth's mean diameter (2 * 6371 km).
   double calculateDistanceInKm(
       double lat1, double lon1, double lat2, double lon2) {
     var p = 0.017453292519943295;
