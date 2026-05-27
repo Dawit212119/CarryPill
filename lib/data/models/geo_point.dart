@@ -4,6 +4,8 @@ class GeoPoint {
 
   const GeoPoint(this.latitude, this.longitude);
 
+  // Tolerant parser: accepts an existing GeoPoint or a map using any of the
+  // latitude/longitude key spellings the backend and client have used.
   factory GeoPoint.fromMap(dynamic map) {
     if (map == null) {
       throw ArgumentError('GeoPoint map is null');
