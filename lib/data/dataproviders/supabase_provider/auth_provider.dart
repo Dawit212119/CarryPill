@@ -5,6 +5,8 @@ import 'package:supabase/supabase.dart' as sb;
 class SupabaseAuthProvider {
   final SupabaseClient _client = Supabase.instance.client;
 
+  // Signs up then immediately signs in so users skip email confirmation;
+  // returns a user-friendly string on known auth errors, null on unexpected ones.
   Future<dynamic> registerWithEmailAndPassword(String email, String password) async {
     try {
       final response = await _client.auth.signUp(email: email, password: password);
