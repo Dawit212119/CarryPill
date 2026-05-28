@@ -7,6 +7,8 @@ class PatientProfileUtils {
     return missingFields(patient).isEmpty;
   }
 
+  // Single source of truth for what "complete" means; the order screen gates
+  // checkout on this list being empty. 'Patient' is the unset default name.
   static List<String> missingFields(Patient patient) {
     final missing = <String>[];
     if (patient.name.trim().isEmpty || patient.name.trim() == 'Patient') {
