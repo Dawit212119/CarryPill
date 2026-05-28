@@ -5,6 +5,8 @@ import 'package:carrypill/data/models/geo_point.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationRepo {
+  // Returns last-known location first for a fast fix, falling back to a live
+  // GPS read; null if permission is denied or unavailable.
   Future<Position?> initPosition() async {
     final hasPermission = await _handlePermission();
     if (hasPermission is String) {
