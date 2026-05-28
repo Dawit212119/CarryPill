@@ -12,6 +12,8 @@ class NotificationService {
   RealtimeChannel? _channel;
   bool _initialized = false;
 
+  // Idempotent: safe to call on every app start; the guard prevents
+  // re-registering platform channels on hot restart.
   Future<void> initialize() async {
     if (_initialized) return;
 
