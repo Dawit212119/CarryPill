@@ -1,5 +1,7 @@
 import 'package:carrypill/data/dataproviders/supabase_provider/storage_provider.dart';
 
+// Thin repo over the storage provider; every upload short-circuits to null
+// when there is no authenticated uid to scope the file under.
 class StorageRepo {
   final String? uid;
 
