@@ -9,6 +9,8 @@ class Clinic {
     this.documentID,
   });
 
+  // Accepts both camelCase and snake_case keys so rows from older and newer
+  // backend schemas deserialize without a migration.
   factory Clinic.fromMap(Map<String, dynamic> map) {
     return Clinic(
       clinicName: map['clinicName'] ?? map['clinic_name'] ?? '',
