@@ -7,6 +7,8 @@ class SupabaseStorageProvider {
   static const patientBucket = 'patient-profiles';
   static const orderTokenBucket = 'order-tokens';
 
+  // Stores at a fixed `<uid>/profilepic` path with upsert so each user keeps
+  // a single profile image that overwrites in place.
   Future<String?> uploadPatientProfileImage(
       String filePath, String uid) async {
     try {
