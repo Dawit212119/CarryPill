@@ -1,6 +1,8 @@
 import 'package:carrypill/data/models/all_enum.dart';
 import 'package:carrypill/data/models/facility.dart';
 
+// Mutable aggregate for a single order; most fields are nullable because they
+// are filled progressively as the order moves through booking and delivery.
 class OrderService {
   Facility? facility;
   StatusOrder statusOrder;
