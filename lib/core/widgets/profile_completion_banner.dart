@@ -16,6 +16,8 @@ class ProfileCompletionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Collapse to nothing once the profile is complete so the banner only
+    // nags while there are still missing fields.
     if (PatientProfileUtils.isComplete(patient)) {
       return const SizedBox.shrink();
     }
