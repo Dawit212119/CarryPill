@@ -1,10 +1,14 @@
+import 'package:carrypill/business_logic/provider/locale_provider.dart';
 import 'package:carrypill/business_logic/provider/patient_provider.dart';
 import 'package:carrypill/constants/constant_color.dart';
+import 'package:carrypill/core/utils/calendar_utils.dart';
 import 'package:carrypill/data/models/clinic.dart';
 import 'package:carrypill/data/models/patient.dart';
 import 'package:carrypill/data/models/patient_uid.dart';
 import 'package:carrypill/data/repositories/supabase_repo/auth_repo.dart';
 import 'package:carrypill/data/repositories/supabase_repo/database_repo.dart';
+import 'package:carrypill/l10n/app_localizations.dart';
+import 'package:carrypill/l10n/l10n.dart';
 import 'package:carrypill/presentations/custom_widgets/radio_list_clinic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -63,12 +67,12 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    // print('build profile tab');
+    final l10n = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
     PatientUid auth = Provider.of<PatientUid>(context);
-    // var patientProvider = Provider.of<PatientProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.profileTitle),
         actions: [
           IconButton(
             onPressed: () async {
@@ -238,7 +242,7 @@ class _ProfileTabState extends State<ProfileTab> {
                               ),
                               focusedDay: _focusedDay,
                               firstDay: DateTime(1998),
-                              lastDay: DateTime(2025),
+                              lastDay: CalendarUtils.lastSelectableDay,
                               calendarFormat: CalendarFormat.twoWeeks,
                               selectedDayPredicate: (day) {
                                 return isSameDay(_selectedDay, day);
@@ -345,6 +349,57 @@ class _ProfileTabState extends State<ProfileTab> {
                               );
                             },
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  gaphr(),
+                  Card(
+                    color: kcWhite,
+                    shape: cornerR(r: 25),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20.w, vertical: 10.h),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.languageSetting,
+                            style: kwtextStyleRD(
+                              c: kcPrimary,
+                              fs: 17,
+                              fw: FontWeight.w600,
+                            ),
+                          ),
+                          gaphr(h: 4),
+                          Text(
+                            l10n.selectLanguage,
+                            style: kwtextStyleRD(
+                              c: kctextgrey,
+                              fs: 12,
+                              fw: FontWeight.w400,
+                            ),
+                          ),
+                          gaphr(h: 12),
+                          ...L10n.supportedLocales.map((locale) {
+                            final labels = {
+                              'en': 'English',
+                              'ms': 'Bahasa Melayu',
+                              'zh': '中文',
+                            };
+                            final currentCode = localeProvider.locale?.languageCode ??
+                                Localizations.localeOf(context).languageCode;
+                            return RadioListTile<String>(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              value: locale.languageCode,
+                              groupValue: currentCode,
+                              title: Text(labels[locale.languageCode] ??
+                                  locale.languageCode),
+                              activeColor: kcPrimary,
+                              onChanged: (_) => localeProvider.setLocale(locale),
+                            );
+                          }),
                         ],
                       ),
                     ),

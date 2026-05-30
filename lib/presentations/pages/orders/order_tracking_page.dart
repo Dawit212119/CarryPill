@@ -1,9 +1,11 @@
 import 'package:carrypill/constants/constant_color.dart';
+import 'package:carrypill/core/utils/delivery_eta_utils.dart';
 import 'package:carrypill/core/utils/order_status_utils.dart';
 import 'package:carrypill/data/models/geo_point.dart';
 import 'package:carrypill/data/models/order_service.dart';
 import 'package:carrypill/data/models/rider.dart';
 import 'package:carrypill/data/repositories/supabase_repo/database_repo.dart';
+import 'package:carrypill/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -26,10 +28,11 @@ class OrderTrackingPage extends StatefulWidget {
 class _OrderTrackingPageState extends State<OrderTrackingPage> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final facility = widget.order.facility;
     if (facility == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Live tracking')),
+        appBar: AppBar(title: Text(l10n.liveTracking)),
         body: const Center(child: Text('Facility information unavailable')),
       );
     }
@@ -49,7 +52,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live tracking'),
+        title: Text(l10n.liveTracking),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: 12.w),
@@ -94,6 +97,11 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                       );
                     },
                   ),
+          ),
+          _EtaBar(
+            facility: facilityPoint,
+            patient: patientPoint,
+            riderId: riderId,
           ),
           _LegendBar(hasRider: riderId != null),
         ],
@@ -142,6 +150,136 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         ),
         MarkerLayer(markers: markers),
       ],
+    );
+  }
+}
+
+class _EtaBar extends StatelessWidget {
+  final LatLng facility;
+  final LatLng? patient;
+  final String? riderId;
+
+  const _EtaBar({
+    required this.facility,
+    required this.patient,
+    required this.riderId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (riderId == null) {
+      return _buildStaticEta(context, l10n, from: facility, to: patient);
+    }
+
+    return StreamBuilder<Rider?>(
+      stream: DatabaseRepo().getRiderStream(riderId!),
+      builder: (context, snapshot) {
+        final rider = snapshot.data?.currrentLocation;
+        if (rider == null) {
+          return _buildStaticEta(context, l10n, from: facility, to: patient);
+        }
+
+        final riderPoint = LatLng(rider.latitude, rider.longitude);
+        final destination = patient ?? facility;
+        return _buildEtaContent(
+          context,
+          l10n,
+          fromLat: riderPoint.latitude,
+          fromLon: riderPoint.longitude,
+          toLat: destination.latitude,
+          toLon: destination.longitude,
+        );
+      },
+    );
+  }
+
+  Widget _buildStaticEta(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required LatLng from,
+    LatLng? to,
+  }) {
+    if (to == null) {
+      return _buildUnavailable(context, l10n);
+    }
+
+    return _buildEtaContent(
+      context,
+      l10n,
+      fromLat: from.latitude,
+      fromLon: from.longitude,
+      toLat: to.latitude,
+      toLon: to.longitude,
+    );
+  }
+
+  Widget _buildUnavailable(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      color: kcBgHome1,
+      child: Row(
+        children: [
+          Icon(Icons.schedule_rounded, color: kctextgrey, size: 18.sp),
+          SizedBox(width: 8.w),
+          Text(
+            l10n.etaUnavailable,
+            style: TextStyle(fontSize: 13.sp, color: kctextgrey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtaContent(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required double fromLat,
+    required double fromLon,
+    required double toLat,
+    required double toLon,
+  }) {
+    final distanceKm =
+        DeliveryEtaUtils.distanceKm(fromLat, fromLon, toLat, toLon);
+    final minutes = DeliveryEtaUtils.estimateMinutes(distanceKm);
+    final eta = DeliveryEtaUtils.formatDuration(minutes);
+    final distance = DeliveryEtaUtils.formatDistance(distanceKm);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: kcPrimary.withValues(alpha: 0.08),
+        border: Border(top: BorderSide(color: kcPrimary.withValues(alpha: 0.15))),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.access_time_filled_rounded, color: kcPrimary, size: 22.sp),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.etaLabel(eta),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: kcPrimary,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  l10n.distanceAway(distance),
+                  style: TextStyle(fontSize: 12.sp, color: kctextgrey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

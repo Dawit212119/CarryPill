@@ -8,6 +8,7 @@ import 'package:carrypill/core/widgets/service_action_card.dart';
 import 'package:carrypill/data/models/all_enum.dart';
 import 'package:carrypill/data/models/patient.dart';
 import 'package:carrypill/data/models/patient_uid.dart';
+import 'package:carrypill/l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -65,6 +66,7 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final firstName = patient.name.trim().split(' ').first;
     final displayName =
         firstName.isEmpty || firstName == 'Patient' ? 'there' : firstName;
@@ -97,7 +99,7 @@ class _HomeTabState extends State<HomeTab> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Hello, $displayName',
+                              l10n.helloName(displayName),
                               style: TextStyle(
                                 fontSize: 26.sp,
                                 fontWeight: FontWeight.w800,
@@ -107,7 +109,7 @@ class _HomeTabState extends State<HomeTab> {
                             ),
                             SizedBox(height: 6.h),
                             Text(
-                              'Medication pickup & delivery',
+                              l10n.homeSubtitle,
                               style: TextStyle(
                                 fontSize: 13.sp,
                                 color: Colors.white.withValues(alpha: 0.85),
@@ -117,7 +119,7 @@ class _HomeTabState extends State<HomeTab> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Order updates',
+                        tooltip: l10n.orderUpdates,
                         onPressed: () =>
                             Navigator.of(context).pushNamed('/notifications'),
                         icon: const Icon(Icons.notifications_outlined, color: Colors.white),
@@ -134,7 +136,7 @@ class _HomeTabState extends State<HomeTab> {
                         child: Text(
                           patient.address?.trim().isNotEmpty == true
                               ? patient.address!
-                              : 'Add your address for accurate delivery',
+                              : l10n.homeAddAddress,
                           style: TextStyle(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w500,
@@ -160,16 +162,16 @@ class _HomeTabState extends State<HomeTab> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 ServiceActionCard(
-                  title: 'Request pickup',
-                  subtitle: 'We collect your medication from the hospital pharmacy.',
+                  title: l10n.homeRequestPickup,
+                  subtitle: l10n.homeRequestPickupSubtitle,
                   icon: Icons.store_mall_directory_outlined,
                   gradient: const [kcPrimary, Color(0xFF2A7A96)],
                   onTap: () => _startOrder(ServiceType.requestPickup),
                 ),
                 SizedBox(height: 12.h),
                 ServiceActionCard(
-                  title: 'Request delivery',
-                  subtitle: 'Medication delivered safely to your home.',
+                  title: l10n.homeRequestDelivery,
+                  subtitle: l10n.homeRequestDeliverySubtitle,
                   icon: Icons.home_work_outlined,
                   gradient: const [Color(0xFFE86A00), kcOrange],
                   onTap: () => _startOrder(ServiceType.requestDelivery),
