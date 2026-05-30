@@ -1,12 +1,51 @@
 {
     "language": "English",
-    "@language":{
+    "@language": {
         "description": "The current Language"
     },
-    "fullNamefield":"Full Name",
-    "icfield":"IC Number",
-    "patientIdfield":"Patient ID",
-    "addressfield":"Address",
-    "followuptreatment":"Follow-up Treatment Clinic"
-    
+    "fullNamefield": "Full Name",
+    "icfield": "IC Number",
+    "patientIdfield": "Patient ID",
+    "addressfield": "Address",
+    "followuptreatment": "Follow-up Treatment Clinic",
+    "navHome": "Home",
+    "navOrders": "Orders",
+    "navProfile": "Profile",
+    "homeSubtitle": "Medication pickup & delivery",
+    "homeAddAddress": "Add your address for accurate delivery",
+    "homeRequestPickup": "Request pickup",
+    "homeRequestPickupSubtitle": "We collect your medication from the hospital pharmacy.",
+    "homeRequestDelivery": "Request delivery",
+    "homeRequestDeliverySubtitle": "Medication delivered safely to your home.",
+    "orderUpdates": "Order updates",
+    "liveTracking": "Live tracking",
+    "etaUnavailable": "ETA unavailable",
+    "languageSetting": "Language",
+    "selectLanguage": "Choose your preferred language",
+    "geocodingFallback": "Could not find that address. Using your current location.",
+    "profileTitle": "Profile",
+    "helloName": "Hello, {name}",
+    "@helloName": {
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "etaLabel": "Estimated arrival: {eta}",
+    "@etaLabel": {
+        "placeholders": {
+            "eta": {
+                "type": "String"
+            }
+        }
+    },
+    "distanceAway": "{distance} away",
+    "@distanceAway": {
+        "placeholders": {
+            "distance": {
+                "type": "String"
+            }
+        }
+    }
 }

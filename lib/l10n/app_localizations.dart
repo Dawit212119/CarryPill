@@ -135,6 +135,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Follow-up Treatment Clinic'**
   String get followuptreatment;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get navOrders;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
+  /// No description provided for @homeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication pickup & delivery'**
+  String get homeSubtitle;
+
+  /// No description provided for @homeAddAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your address for accurate delivery'**
+  String get homeAddAddress;
+
+  /// No description provided for @homeRequestPickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Request pickup'**
+  String get homeRequestPickup;
+
+  /// No description provided for @homeRequestPickupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We collect your medication from the hospital pharmacy.'**
+  String get homeRequestPickupSubtitle;
+
+  /// No description provided for @homeRequestDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Request delivery'**
+  String get homeRequestDelivery;
+
+  /// No description provided for @homeRequestDeliverySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Medication delivered safely to your home.'**
+  String get homeRequestDeliverySubtitle;
+
+  /// No description provided for @orderUpdates.
+  ///
+  /// In en, this message translates to:
+  /// **'Order updates'**
+  String get orderUpdates;
+
+  /// No description provided for @liveTracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Live tracking'**
+  String get liveTracking;
+
+  /// No description provided for @etaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA unavailable'**
+  String get etaUnavailable;
+
+  /// No description provided for @languageSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageSetting;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your preferred language'**
+  String get selectLanguage;
+
+  /// No description provided for @geocodingFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not find that address. Using your current location.'**
+  String get geocodingFallback;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @helloName.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String helloName(String name);
+
+  /// No description provided for @etaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated arrival: {eta}'**
+  String etaLabel(String eta);
+
+  /// No description provided for @distanceAway.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} away'**
+  String distanceAway(String distance);
 }
 
 class _AppLocalizationsDelegate
