@@ -1,3 +1,4 @@
+import 'package:carrypill/business_logic/provider/locale_provider.dart';
 import 'package:carrypill/business_logic/provider/order_provider.dart';
 import 'package:carrypill/business_logic/provider/patient_provider.dart';
 import 'package:carrypill/business_logic/provider/provider_location.dart';
@@ -27,6 +28,9 @@ void main() async {
   Position? position = await LocationRepo().initPosition();
   // print(position);
   runApp(MultiProvider(providers: [
+    ChangeNotifierProvider<LocaleProvider>(
+      create: (_) => LocaleProvider(),
+    ),
     ChangeNotifierProvider<ProviderLocation>.value(
       value: ProviderLocation(position: position),
     ),
@@ -49,12 +53,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = context.watch<LocaleProvider>().locale;
+
     return ScreenUtilInit(
         designSize: const Size(390, 844),
         builder: (context, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
+            locale: locale,
             supportedLocales: L10n.supportedLocales,
             localizationsDelegates: const [
               AppLocalizations.delegate,

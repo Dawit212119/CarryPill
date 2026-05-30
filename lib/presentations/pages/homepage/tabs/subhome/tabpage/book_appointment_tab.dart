@@ -6,6 +6,7 @@ import 'package:carrypill/data/models/all_enum.dart';
 import 'package:carrypill/data/models/clinic.dart';
 import 'package:carrypill/data/models/facility.dart';
 import 'package:carrypill/data/models/order_service.dart';
+import 'package:carrypill/core/utils/calendar_utils.dart';
 import 'package:carrypill/core/widgets/clinic_medication_checklist.dart';
 import 'package:carrypill/core/widgets/facility_picker.dart';
 import 'package:carrypill/core/widgets/queue_token_section.dart';
@@ -15,10 +16,10 @@ import 'package:carrypill/data/repositories/supabase_repo/database_repo.dart';
 import 'package:carrypill/data/repositories/map_repo/location_repo.dart';
 import 'package:carrypill/presentations/custom_widgets/radio_list_clinic.dart';
 import 'package:carrypill/data/models/geo_point.dart';
+import 'package:carrypill/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -286,7 +287,7 @@ class _BookAppointmentTabState extends State<BookAppointmentTab> {
                             ),
                             focusedDay: _focusedDay,
                             firstDay: DateTime(1998),
-                            lastDay: DateTime(2025),
+                            lastDay: CalendarUtils.lastSelectableDay,
                             calendarFormat: CalendarFormat.week,
                             selectedDayPredicate: (day) {
                               return isSameDay(_selectedDay, day);
@@ -344,24 +345,26 @@ class _BookAppointmentTabState extends State<BookAppointmentTab> {
                     GeoPoint geoAddress;
                     GeoPoint geoFacility;
                     double totalPay;
-                    dynamic addresses;
-                    dynamic address;
-                    addresses = await locationFromAddress(addressCon.text);
-                    address = addresses.first;
-                    geoAddress = GeoPoint(address.latitude, address.longitude);
-
-                    // try {
-                    //   addresses = await locationFromAddress(addressCon.text);
-                    //   address = addresses.first;
-                    //   geoAddress =
-                    //       GeoPoint(address.latitude, address.longitude);
-                    // } on Exception catch (e) {
-                    //   print(e);
-                    //   Position pos = await LocationRepo().getCurrentLocation();
-                    //   geoAddress = GeoPoint(pos.latitude, pos.longitude);
-
-                    //   // TODO
-                    // }
+                    try {
+                      final addresses = await locationFromAddress(addressCon.text);
+                      if (addresses.isEmpty) {
+                        throw Exception('No geocoding results');
+                      }
+                      final address = addresses.first;
+                      geoAddress =
+                          GeoPoint(address.latitude, address.longitude);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.geocodingFallback,
+                          ),
+                        ),
+                      );
+                      final pos = await LocationRepo().getCurrentLocation();
+                      geoAddress = GeoPoint(pos.latitude, pos.longitude);
+                    }
 
                     geoFacility = GeoPoint(facility!.geoPoint.latitude,
                         facility!.geoPoint.longitude);
